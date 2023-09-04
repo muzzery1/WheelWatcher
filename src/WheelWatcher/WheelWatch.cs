@@ -51,7 +51,7 @@ namespace WheelWatcher
         public void OnTimer(object sender, ElapsedEventArgs args)
         {
             //Make sure it is only called once.
-            Timer.Stop();
+            Timer?.Stop();
 
             try
             {
@@ -72,7 +72,7 @@ namespace WheelWatcher
             finally
             {
                 //Start the timer to ensure this gets called again
-                Timer.Start();
+                Timer?.Start();
             }
         }
 
@@ -100,7 +100,7 @@ namespace WheelWatcher
                 //TODO Write to CSV file
                 eventLog.WriteEntry(string.Join(Environment.NewLine, numbers), EventLogEntryType.Information, eventId++);
 
-                Thread.Sleep(5000);
+                Thread.Sleep(1000);
             }
         }
 
