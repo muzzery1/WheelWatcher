@@ -1,0 +1,1 @@
+New-Service -Name "Wheel Watch" -BinaryPathName "C:\Users\alex_\source\repos\WheelWatcher\src\WheelWatcher\bin\Debug\WheelWatcher.exe"
