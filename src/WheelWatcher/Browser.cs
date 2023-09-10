@@ -58,7 +58,9 @@ namespace WheelWatcher
                 }
                 catch (Exception exception)
                 {
-                    EventLog.WriteEntry($"An error occured lanuching the browser:{Environment.NewLine}{Environment.NewLine}{exception}", EventLogEntryType.Error);
+                    var message = $"An error occured launching the browser:{Environment.NewLine}{Environment.NewLine}{exception}";
+                    EventLog.WriteEntry(message, EventLogEntryType.Error);
+                    Console.WriteLine(message);
 
                     retryCounter++;
                     if (retryCounter == retries)
@@ -146,11 +148,15 @@ namespace WheelWatcher
 
                 screenShot.SaveAsFile(filePath, ScreenshotImageFormat.Jpeg);
 
-                EventLog.WriteEntry($"Screenshot saved under {filePath}", EventLogEntryType.Error);
+                var message = $"Screenshot saved under {filePath}";
+                EventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
             }
             catch (Exception exception)
             {
-                EventLog.WriteEntry($"Unable to take screenshot{Environment.NewLine}{Environment.NewLine}{exception}", EventLogEntryType.Error);
+                var message = $"Unable to take screenshot{Environment.NewLine}{Environment.NewLine}{exception}";
+                EventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
             }
         }
 

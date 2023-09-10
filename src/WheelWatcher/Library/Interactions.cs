@@ -1,4 +1,5 @@
 ﻿using OpenQA.Selenium;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
@@ -17,7 +18,11 @@ namespace WheelWatcher.Library
         {
             //See if the element is visible. If it is not, throw an error
             if (!Validations.IsFirstElementLoaded(eventLog, driver, elementsToGet, out var elements))
-                eventLog.WriteEntry($"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded", EventLogEntryType.Error);
+            {
+                var message = $"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded";
+                eventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
+            }
 
             //Return the elements
             return elements;
@@ -35,7 +40,11 @@ namespace WheelWatcher.Library
         {
             //See if the element is visible. If it is not, throw an error
             if (!Validations.IsFirstElementLoaded(eventLog, driver, elementToSearch, elementsToGet, out var elements))
-                eventLog.WriteEntry($"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded", EventLogEntryType.Error);
+            {
+                var message = $"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded";
+                eventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
+            }
 
             //Return the elements
             return elements;
@@ -53,7 +62,11 @@ namespace WheelWatcher.Library
         {
             //See if the element is visible. If it is not, throw an error
             if (!Validations.IsElementLoaded(eventLog, driver, elementToSearch, elementsToGet, out var elements))
-                eventLog.WriteEntry($"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded", EventLogEntryType.Error);
+            {
+                var message = $"Unable to get elements {elementsToGet} as the 1st item in the elements to get was not loaded";
+                eventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
+            }
 
             //Return the elements
             return elements;

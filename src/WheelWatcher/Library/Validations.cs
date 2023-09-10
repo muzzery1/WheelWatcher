@@ -127,7 +127,9 @@ namespace WheelWatcher.Library
             catch (WebDriverTimeoutException)
             {
                 //If it was a timeout, log and return false as the condition was not met
-                eventLog.WriteEntry($"Element not found after {timeout}", EventLogEntryType.Warning);
+                var message = $"Element not found after {timeout}";
+                eventLog.WriteEntry(message, EventLogEntryType.Warning);
+                Console.WriteLine(message);
 
                 return false;
             }
@@ -140,7 +142,9 @@ namespace WheelWatcher.Library
             }
             catch (Exception exception)
             {
-                eventLog.WriteEntry($"Error getting element:{Environment.NewLine}{Environment.NewLine}{exception}", EventLogEntryType.Error);
+                var message = $"Error getting element:{Environment.NewLine}{Environment.NewLine}{exception}";
+                eventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
             }
             //finally
             //{

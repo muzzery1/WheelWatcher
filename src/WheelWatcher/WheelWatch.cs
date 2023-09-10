@@ -40,6 +40,8 @@ namespace WheelWatcher
             RootDirectory = Directory.CreateDirectory(RootDirectoryPath);
 
             Results = new Dictionary<string, List<WheelResults>>();
+
+            ReadLogResults();
         }
 
         protected override void OnStart(string[] args)
@@ -52,6 +54,23 @@ namespace WheelWatcher
             };
             Timer.Elapsed += new ElapsedEventHandler(OnTimer);
             Timer.Start();
+        }
+
+        private void ReadLogResults()
+        {
+            var files = Directory.EnumerateFiles(RootDirectory.FullName, "*.csv", SearchOption.TopDirectoryOnly);
+
+            foreach (var file in files)
+            {
+                Console.WriteLine($"Caching current contents from {file}");
+                var contents = File.ReadAllLines(file).ToList();
+
+                contents.Reverse();
+
+                Results.Add(
+                    file.Substring(file.LastIndexOf(@"\") + 1, file.IndexOf(".csv") - file.LastIndexOf(@"\") - 1),
+                    contents.Select(c => new WheelResults(c.Substring(c.IndexOf(",") + 1), true)).ToList());
+            }
         }
 
         public void OnTimer(object sender, ElapsedEventArgs args)
@@ -81,6 +100,31 @@ namespace WheelWatcher
             LaunchBrowser();
 
             CheckResults();
+        }
+
+        private void WriteResults(string key)
+        {
+            var path = $@"{RootDirectory}\{key}.csv";
+            Console.WriteLine($"Writing results to path {path}");
+
+            try
+            {
+                using (var streamWriter = File.AppendText(path))
+                {
+                    //Log them backwards so the most recent one is at the bottom
+                    foreach (var wheelResult in Results[key].Where(r => !r.Logged).Reverse())
+                    {
+                        streamWriter.WriteLine(wheelResult);
+                        wheelResult.Logged = true;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                var message = $"An error occured writing the results to {path}:{Environment.NewLine}{Environment.NewLine}{exception}";
+                base.EventLog.WriteEntry(message, EventLogEntryType.Error);
+                Console.WriteLine(message);
+            }
         }
 
         private void LaunchBrowser()
@@ -157,9 +201,10 @@ namespace WheelWatcher
 
             if (!Results.ContainsKey(wheelTitle))
             {
-                Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Initial Results: {string.Join(", ", wheelResults.Select(r => r.Value))}");
+                Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Initial Cached Results: {string.Join(", ", wheelResults.Select(r => r.Value))}");
 
                 Results.Add(wheelTitle, wheelResults);
+                WriteResults(wheelTitle);
                 return;
             }
 
@@ -186,7 +231,7 @@ namespace WheelWatcher
                 //This value is new, so log it
                 if (wheelCompare != resultsCompare)
                 {
-                    Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Adding Result: {wheelResults[i].Value}");
+                    Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Caching Result: {wheelResults[i].Value}");
                     resultsToAdd.Add(wheelResults[i]);
                 }
 
@@ -199,6 +244,7 @@ namespace WheelWatcher
 
             //Add all new results
             Results[wheelTitle].InsertRange(0, resultsToAdd);
+            WriteResults(wheelTitle);
         }
 
         protected override void OnStop()
