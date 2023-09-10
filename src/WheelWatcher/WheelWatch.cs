@@ -32,6 +32,8 @@ namespace WheelWatcher
             }
             eventLog.Source = EventSourceName;
             eventLog.Log = EventLogName;
+
+            RootDirectory = Directory.CreateDirectory(RootDirectoryPath);
         }
 
         protected override void OnStart(string[] args)
@@ -44,8 +46,6 @@ namespace WheelWatcher
             };
             Timer.Elapsed += new ElapsedEventHandler(OnTimer);
             Timer.Start();
-
-            RootDirectory = Directory.CreateDirectory(RootDirectoryPath);
         }
 
         public void OnTimer(object sender, ElapsedEventArgs args)
@@ -55,9 +55,7 @@ namespace WheelWatcher
 
             try
             {
-                LaunchBrowser();
-
-                CheckResults();
+                Watch();
             }
             catch (Exception exception)
             {
@@ -70,6 +68,13 @@ namespace WheelWatcher
                 //Start the timer to ensure this gets called again
                 Timer?.Start();
             }
+        }
+
+        public void Watch()
+        {
+            LaunchBrowser();
+
+            CheckResults();
         }
 
         private void LaunchBrowser()
@@ -87,19 +92,25 @@ namespace WheelWatcher
             {
                 var numbers = new List<string>();
 
-                //TODO See why timeout occurs
                 var elements = Interactions.GetElementsIfLoaded(eventLog, Browser.Driver, By.XPath(ControlIds.AllWheelTiles_XPath));
 
                 foreach (var element in elements)
                 {
-                    var title = element.FindElement(By.XPath(ControlIds.WheelTitle_XPath));
-                    var results = element.FindElements(By.XPath(ControlIds.WheelResults_XPath));
+                    var title = Interactions.GetElementIfLoaded(eventLog, Browser.Driver, element, By.XPath(ControlIds.WheelTitle_XPath));
+                    var results = Interactions.GetElementsIfLoaded(eventLog, Browser.Driver, element, By.XPath(ControlIds.WheelResults_XPath));
 
                     if (title == null || results == null)
+                    {
+                        Console.WriteLine($"No numbers found for wheel {title.Text}");
                         continue;
+                    }
 
                     if (!results.Any(r => string.IsNullOrWhiteSpace(r?.Text)) && !string.IsNullOrWhiteSpace(title.Text))
-                        numbers.Add($"Title: {title.Text}, Results: {string.Join(", ", results.Select(r => r.Text))}");
+                    {
+                        string logMessage = $"Title: {title.Text}, Results: {string.Join(", ", results.Select(r => r.Text))}";
+                        numbers.Add(logMessage);
+                        Console.WriteLine(logMessage);
+                    }
                 }
 
                 //TODO Write to CSV file

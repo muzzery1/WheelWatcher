@@ -1,5 +1,4 @@
-﻿using System.Timers;
-using WheelWatcher;
+﻿using WheelWatcher;
 
 namespace WheelWatcherRunner
 {
@@ -7,9 +6,16 @@ namespace WheelWatcherRunner
     {
         static void Main(string[] args)
         {
-            var watcher = new WheelWatch();
+            try
+            {
+                var watcher = new WheelWatch();
 
-            watcher.OnTimer(new object(), new EventArgs() as ElapsedEventArgs);
+                watcher.Watch();
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+            }
         }
     }
 }
