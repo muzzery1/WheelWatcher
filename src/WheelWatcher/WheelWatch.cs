@@ -55,11 +55,7 @@ namespace WheelWatcher
 
             try
             {
-                if (Browser == null)
-                {
-                    Browser = new Browser(RootDirectory, eventLog);
-                    Browser.Launch("https://casino.betfair.com/c/live-roulette");
-                }
+                LaunchBrowser();
 
                 CheckResults();
             }
@@ -73,6 +69,15 @@ namespace WheelWatcher
             {
                 //Start the timer to ensure this gets called again
                 Timer?.Start();
+            }
+        }
+
+        private void LaunchBrowser()
+        {
+            if (Browser == null)
+            {
+                Browser = new Browser(RootDirectory, eventLog);
+                Browser.Launch("https://casino.betfair.com/c/live-roulette");
             }
         }
 
