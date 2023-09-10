@@ -116,7 +116,7 @@ namespace WheelWatcher.Library
             try
             {
                 //Set timeout to incoming value whilst looking for the element
-                driver.Manage().Timeouts().ImplicitWait = timeout;
+                //driver.Manage().Timeouts().ImplicitWait = timeout;
 
                 //Set a wait for the timeout period
                 var wait = new WebDriverWait(driver, timeout);
@@ -142,11 +142,11 @@ namespace WheelWatcher.Library
             {
                 eventLog.WriteEntry($"Error getting element:{Environment.NewLine}{Environment.NewLine}{exception}", EventLogEntryType.Error);
             }
-            finally
-            {
-                //Set timeout back to Context default, or 1 minute
-                driver.Manage().Timeouts().ImplicitWait = new TimeSpan(0, 0, 60);
-            }
+            //finally
+            //{
+            //    //Set timeout back to Context default, or 1 minute
+            //    driver.Manage().Timeouts().ImplicitWait = new TimeSpan(0, 0, 60);
+            //}
 
             return true;
         }

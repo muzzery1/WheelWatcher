@@ -80,6 +80,7 @@
     <Compile Include="Library\ControlIds.cs" />
     <Compile Include="Library\Interactions.cs" />
     <Compile Include="Library\Validations.cs" />
+    <Compile Include="Models\WheelResults.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
