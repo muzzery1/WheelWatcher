@@ -24,6 +24,8 @@ namespace WheelWatcher
         private Timer Timer;
         private Dictionary<string, List<WheelResults>> Results;
         private object ResultsLock = new object();
+        private object RunningLock = new object();
+        private bool Running;
 
         public WheelWatch()
         {
@@ -61,13 +63,14 @@ namespace WheelWatcher
 
             foreach (var file in files)
             {
-                Console.WriteLine($"Caching current contents from {file}");
+                string wheelTitle = file.Substring(file.LastIndexOf(@"\") + 1, file.IndexOf(".csv") - file.LastIndexOf(@"\") - 1);
+
+                Console.WriteLine($"{DateTime.Now} | Wheel Title: {wheelTitle} | Caching current contents from {file}");
                 var contents = File.ReadAllLines(file).ToList();
 
                 contents.Reverse();
 
-                Results.Add(
-                    file.Substring(file.LastIndexOf(@"\") + 1, file.IndexOf(".csv") - file.LastIndexOf(@"\") - 1),
+                Results.Add(wheelTitle,
                     contents.Select(c => new WheelResults(c.Substring(c.IndexOf(",") + 1), true)).ToList());
             }
         }
@@ -76,8 +79,6 @@ namespace WheelWatcher
         {
             //Make sure it is only called once.
             Timer?.Stop();
-
-            eventLog.WriteEntry("Started timer", EventLogEntryType.Information);
 
             try
             {
@@ -89,8 +90,6 @@ namespace WheelWatcher
 
                 eventLog.WriteEntry(exception.ToString(), EventLogEntryType.Error);
             }
-
-            eventLog.WriteEntry("Ended timer", EventLogEntryType.Information);
         }
 
         public void Watch()
@@ -100,22 +99,23 @@ namespace WheelWatcher
             CheckResults();
         }
 
-        private void WriteResults(string key)
+        private void WriteResults(string wheelTitle)
         {
-            var path = $@"{RootDirectory.FullName}\{key}.csv";
-            Console.WriteLine($"Writing results to path {path}");
+            var path = $@"{RootDirectory.FullName}\{wheelTitle}.csv";
 
             try
             {
                 using (var streamWriter = File.AppendText(path))
                 {
                     //Log them backwards so the most recent one is at the bottom
-                    foreach (var wheelResult in Results[key].Where(r => !r.Logged).Reverse())
+                    foreach (var wheelResult in Results[wheelTitle].Where(r => !r.Logged).Reverse())
                     {
                         streamWriter.WriteLine(wheelResult);
                         wheelResult.Logged = true;
                     }
                 }
+
+                Console.WriteLine($"{DateTime.Now} | Wheel Title: {wheelTitle} | Written results to path {path}");
             }
             catch (Exception exception)
             {
@@ -136,18 +136,22 @@ namespace WheelWatcher
 
         private void CheckResults()
         {
+            SetRunningState(true);
             Browser.Driver.Manage().Timeouts().ImplicitWait = new TimeSpan(0, 0, 1);
 
-            while (true)
+            while (Running)
             {
-                var elements = Interactions.GetElementsIfLoaded(eventLog, Browser.Driver, By.XPath(ControlIds.AllWheelTiles_XPath));
+                lock (RunningLock)
+                {
+                    var elements = Interactions.GetElementsIfLoaded(eventLog, Browser.Driver, By.XPath(ControlIds.AllWheelTiles_XPath));
 
-                var parellelCheck = new List<Action>();
+                    var parellelCheck = new List<Action>();
 
-                foreach (var element in elements)
-                    parellelCheck.Add(() => GetResults(element));
+                    foreach (var element in elements)
+                        parellelCheck.Add(() => GetResults(element));
 
-                Parallel.Invoke(parellelCheck.ToArray());
+                    Parallel.Invoke(parellelCheck.ToArray());
+                }
 
                 Thread.Sleep(new TimeSpan(0, 0, 1));
             }
@@ -199,7 +203,7 @@ namespace WheelWatcher
 
             if (!Results.ContainsKey(wheelTitle))
             {
-                Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Initial Cached Results: {string.Join(", ", wheelResults.Select(r => r.Value))}");
+                Console.WriteLine($"{DateTime.Now} | Wheel Title: {wheelTitle} | Initial Cached Results: {string.Join(", ", wheelResults.Select(r => r.Value))}");
 
                 Results.Add(wheelTitle, wheelResults);
                 WriteResults(wheelTitle);
@@ -229,7 +233,7 @@ namespace WheelWatcher
                 //This value is new, so log it
                 if (wheelCompare != resultsCompare)
                 {
-                    Console.WriteLine($"{DateTime.Now} | Title: {wheelTitle} | Caching Result: {wheelResults[i].Value}");
+                    Console.WriteLine($"{DateTime.Now} | Wheel Title: {wheelTitle} | Caching Result: {wheelResults[i].Value}");
                     resultsToAdd.Add(wheelResults[i]);
                 }
 
@@ -245,9 +249,18 @@ namespace WheelWatcher
             WriteResults(wheelTitle);
         }
 
+        private void SetRunningState(bool state)
+        {
+            lock (RunningLock)
+                Running = state;
+        }
+
         protected override void OnStop()
         {
+            eventLog.WriteEntry("Wheel Watch Stopping");
+            SetRunningState(false);
             Browser?.Stop();
+            Browser = null;
             eventLog.WriteEntry("Wheel Watch Stopped");
         }
     }
