@@ -20,7 +20,6 @@ namespace WheelWatcher
         private const string EventLogName = "WheelWatchLog";
         private const string RootDirectoryPath = @"C:\WheelWatcher";
         private DirectoryInfo RootDirectory;
-        private int eventId = 1;
         private Browser Browser;
         private Timer Timer;
         private Dictionary<string, List<WheelResults>> Results;
@@ -78,6 +77,8 @@ namespace WheelWatcher
             //Make sure it is only called once.
             Timer?.Stop();
 
+            eventLog.WriteEntry("Started timer", EventLogEntryType.Information);
+
             try
             {
                 Watch();
@@ -88,11 +89,8 @@ namespace WheelWatcher
 
                 eventLog.WriteEntry(exception.ToString(), EventLogEntryType.Error);
             }
-            finally
-            {
-                //Start the timer to ensure this gets called again
-                Timer?.Start();
-            }
+
+            eventLog.WriteEntry("Ended timer", EventLogEntryType.Information);
         }
 
         public void Watch()
@@ -104,7 +102,7 @@ namespace WheelWatcher
 
         private void WriteResults(string key)
         {
-            var path = $@"{RootDirectory}\{key}.csv";
+            var path = $@"{RootDirectory.FullName}\{key}.csv";
             Console.WriteLine($"Writing results to path {path}");
 
             try
@@ -122,7 +120,7 @@ namespace WheelWatcher
             catch (Exception exception)
             {
                 var message = $"An error occured writing the results to {path}:{Environment.NewLine}{Environment.NewLine}{exception}";
-                base.EventLog.WriteEntry(message, EventLogEntryType.Error);
+                eventLog.WriteEntry(message, EventLogEntryType.Error);
                 Console.WriteLine(message);
             }
         }
